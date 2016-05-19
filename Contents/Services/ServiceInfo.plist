@@ -42,6 +42,41 @@
         <string>^http:\/\/www\.novamov\.com\/video\/[a-f0-9]+</string>
       </array>
     </dict>
+    <key>XFileShare</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(www\.)?daclips\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?filehoot\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?gorillavid\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?movpod\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?powerwatch\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?rapidvideo\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?streamin\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+    <key>VShare</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(www\.)?vshare\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+    <key>TheVideo</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?:\/\/(?:www\.)?thevideo\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+    <key>VidUP</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?:\/\/(?:www\.|beta\.)?vidup\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
   </dict>
 </dict>
 </plist>
