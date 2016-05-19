@@ -2,8 +2,7 @@ import bookmarks
 import messages
 from time import sleep
 from updater import Updater
-from DumbTools import DumbKeyboard
-from DumbTools import DumbPrefs
+from DumbTools import DumbKeyboard, DumbPrefs
 from AuthTools import CheckAdmin
 
 TITLE = 'PrimeWire'
@@ -15,6 +14,12 @@ MOVIE_ICON = 'icon-movie.png'
 TV_ICON = 'icon-tv.png'
 BOOKMARK_ADD_ICON = 'icon-add-bookmark.png'
 BOOKMARK_REMOVE_ICON = 'icon-remove-bookmark.png'
+REL_URL = 'index.php?%ssort=%s&genre=%s'
+SORT_LIST = (
+    ('date', 'Date Added'), ('views', 'Popular'), ('ratings', 'Ratings'),
+    ('favorites', 'Favorites'), ('release', 'Release Date'), ('alphabet', 'Alphabet'),
+    ('featured', 'Featured')
+    )
 
 BM = bookmarks.Bookmark(PREFIX, TITLE, BOOKMARK_ADD_ICON, BOOKMARK_REMOVE_ICON)
 MC = messages.NewMessageContainer(PREFIX, TITLE)
@@ -228,35 +233,54 @@ def BookmarksSub(category):
 
 ####################################################################################################
 @route(PREFIX + '/section')
-def Section(title, type='movies'):
+def Section(title, type='movies', genre=None):
 
     if DomainTest() != False:
         return DomainTest()
 
-    if type == 'tv':
-        rel_url = 'index.php?tv=&sort=%s'
-    else:
-        rel_url = 'index.php?sort=%s'
-
     oc = ObjectContainer(title2=title)
 
-    oc.add(DirectoryObject(key=Callback(Media, title='Popular', rel_url=rel_url % ('views')), title='Popular'))
-    oc.add(DirectoryObject(key=Callback(Media, title='Featured', rel_url=rel_url % ('featured')), title='Featured'))
-    oc.add(DirectoryObject(key=Callback(Media, title='Highly Rated', rel_url=rel_url % ('ratings')), title='Highly Rated'))
-    oc.add(DirectoryObject(key=Callback(Media, title='Recently Added', rel_url=rel_url % ('date')), title='Recently Added'))
-    oc.add(DirectoryObject(key=Callback(Media, title='Latest Releases', rel_url=rel_url % ('release')), title='Latest Releases'))
+    if not genre:
+        oc.add(DirectoryObject(key=Callback(Genres, title='Genres', type=type), title='Genres'))
+
+    section = 'tv=&' if type == 'tv' else ''
+    genre = genre if genre else ''
+    for s, t in SORT_LIST:
+        rel_url = REL_URL %(section, s, genre)
+        oc.add(DirectoryObject(key=Callback(Media, title=t, rel_url=rel_url), title=t))
 
     return oc
 
 ####################################################################################################
-@route(PREFIX + '/media', page=int, search=bool)
-def Media(title, rel_url, page=1, search=False):
-
+@route(PREFIX + '/genres')
+def Genres(title, type):
     if DomainTest() != False:
         return DomainTest()
 
-    url = Dict['pw_site_url'] + '/%s&page=%i' %(rel_url, page)
+    section = 'tv=&' if type == 'tv' else ''
+    rel_url = 'index.php?%s' %section
+    html, url, error = html_from_url(rel_url, 1)
+    if error:
+        return MC.message_container('Error', error_message())
 
+    oc = ObjectContainer(title2=title)
+    g_list = []
+    for g in html.xpath('//a[contains(@href, "%sgenre=")]' %section.replace('=', '')):
+        genre = g.get('href').split('=')[-1]
+        gtitle = g.text.strip()
+        if (gtitle, genre) not in g_list:
+            g_list.append((gtitle, genre))
+
+    for t, g in sorted(g_list):
+        oc.add(DirectoryObject(key=Callback(Section, title=t, type=type, genre=g), title=t))
+
+    return oc
+
+####################################################################################################
+def html_from_url(rel_url, page=int):
+    t = '' if (rel_url.endswith('&') or rel_url.endswith('?')) else '&'
+    url = Dict['pw_site_url'] + '/%s%spage=%i' %(rel_url, t, page)
+    error = False
     if not Prefs['no_bm']:
         if Dict['pw_site_url'] != Dict['pw_site_url_old']:
             Dict['pw_site_url_old'] = Dict['pw_site_url']
@@ -269,7 +293,21 @@ def Media(title, rel_url, page=1, search=False):
         except:
             HTTP.ClearCache()
             Log.Error(error_message())
-            return MC.message_container('Error', error_message())
+            html = HTML.Element('head', 'Error')
+            error = True
+
+    return (html, url, error)
+
+####################################################################################################
+@route(PREFIX + '/media', page=int, search=bool)
+def Media(title, rel_url, page=1, search=False):
+
+    if DomainTest() != False:
+        return DomainTest()
+
+    html, url, error = html_from_url(rel_url, page)
+    if error:
+        return MC.message_container('Error', error_message())
 
     oc = ObjectContainer(title2=title, no_cache=True)
 
