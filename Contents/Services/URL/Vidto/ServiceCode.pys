@@ -1,55 +1,60 @@
-# Vidto
-#
+#!/usr/bin/env python
+
+"""Vidto service code"""
+
 import time
 ####################################################################################################
 def NormalizeURL(url):
 
-	return url.split('?')[0]
+    return url.split('?')[0]
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-	html = HTML.ElementFromURL(url)
-	title = html.xpath('//h2[@class="video-page-head"]/text()')[0].strip()
+    html = HTML.ElementFromURL(url)
+    title = html.xpath('//h2[@class="video-page-head"]/text()')
+    if not title:
+        raise Ex.MediaNotAvailable
 
-	return VideoClipObject(
-		title = title
-	)
+    return VideoClipObject(
+        title=title[0].strip(),
+        source_title='Vidto'
+        )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-	return [
-		MediaObject(
-			video_resolution = 'sd',
-			audio_channels = 2,
-			optimized_for_streaming = False,
-			parts = [
-				PartObject(key=Callback(PlayVideo, url=url))
-			]
-		)
-	]
+    return [
+        MediaObject(
+            video_resolution = 'sd',
+            audio_channels = 2,
+            optimized_for_streaming = False,
+            parts = [
+                PartObject(key=Callback(PlayVideo, url=url))
+            ]
+        )
+    ]
 
 ####################################################################################################
 @indirect
 def PlayVideo(url):
 
-	html = HTML.ElementFromURL(url)
-	post_values = {}
+    html = HTML.ElementFromURL(url)
+    post_values = {}
 
-	for item in html.xpath('//form[@method="POST"]/input'):
+    for item in html.xpath('//form[@method="POST"]/input'):
 
-		name = item.get('name')
-		value = item.get('value')
-		post_values[name] = value
+        name = item.get('name')
+        value = item.get('value')
+        post_values[name] = value
 
-	time.sleep(6)
+    time.sleep(6)
 
-	page = HTTP.Request(url, values=post_values, method='POST').content
+    page = HTTP.Request(url, values=post_values, method='POST').content
 
-	file = Regex('a id="lnk_download" href="([^"]+)"').search(page)
+    file = Regex(r'a id="lnk_download" href="([^"]+)"').search(page)
 
-	if file:
-		return IndirectResponse(VideoClipObject, key=file.group(1))
+    if file:
+        return IndirectResponse(VideoClipObject, key=file.group(1))
 
-	raise Ex.MediaNotAvailable
+    raise Ex.MediaNotAvailable

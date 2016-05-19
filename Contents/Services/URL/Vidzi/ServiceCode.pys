@@ -36,9 +36,10 @@ def MetadataObjectForURL(url):
     thumb = html.xpath('//span[@id="vplayer"]/img/@src')[0]
 
     return VideoClipObject(
-        title = title,
-        thumb = thumb
-    )
+        title=title,
+        thumb=thumb,
+        source_title='Vidzi'
+        )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
