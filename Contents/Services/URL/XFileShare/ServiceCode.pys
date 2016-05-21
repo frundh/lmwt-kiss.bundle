@@ -3,7 +3,7 @@
 """
 Service Code for:
     DaClips, FileHoot, GorillaVid, MovPod, PowerWatch
-    Rapidvideo, TheVideoBee, Streamin
+    Rapidvideo, TheVideoBee, Streamin, Vidtodo, AllMyVideos
 
 Decided to sepearte out Vidto, because it host multiple resolutions
 """
@@ -33,8 +33,8 @@ def MetadataObjectForURL(url):
     if packed:
         tpage = Unpack(packed.group(1))
 
-    rt = Regex(r'image\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(tpage)
-    rd = Regex(r'duration\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(tpage)
+    rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(tpage)
+    rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(tpage)
     thumb = 'http://i.imgur.com/75YO83o.jpg'
     fallback = thumb
     duration = None
@@ -74,7 +74,7 @@ def PlayVideo(url):
     if packed:
         page = Unpack(packed.group(1))
 
-    r = Regex(r'file\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
+    r = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
 
     if r:
         Log.Debug('* PlayVideo URL = \"%s\"' %r.group(1))
@@ -88,7 +88,7 @@ def get_packed_data(page):
 
 ####################################################################################################
 def get_embed_url(url, norm=False):
-    r = Regex(r'(https?\:\/\/(?:www\.)?(?:daclips|filehoot|gorillavid|movpod|powerwatch|rapidvideo|thevideobee|streamin|vidtodo)\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    r = Regex(r'(https?\:\/\/(?:www\.)?(?:daclips|filehoot|gorillavid|movpod|powerwatch|rapidvideo|thevideobee|streamin|vidtodo|allmyvideos)\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
     if norm:
         return r
     else:
