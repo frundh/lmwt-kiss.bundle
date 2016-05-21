@@ -55,6 +55,7 @@
         <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamin\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?allmyvideos\.(?:[^/]+\/).+</string>
       </array>
     </dict>
     <key>VShare</key>
@@ -91,6 +92,20 @@
       <array>
         <string>^https?\:\/\/(?:www\.)?promptfile\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(?:www\.)?briskfile\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+    <key>ShareRepo</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(?:www\.)?sharerepo\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+    <key>Vid_ag</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(?:www\.)?vid\.(?:[^/]+\/).+</string>
       </array>
     </dict>
   </dict>

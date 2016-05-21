@@ -30,12 +30,13 @@ def MetadataObjectForURL(url):
 
     tpage = HTTP.Request(get_embed_url(url)).content
     packed = get_packed_data(tpage)
-    if packed and no_skip():
+    if packed:
         tpage = Unpack(packed.group(1))
 
     rt = Regex(r'image\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(tpage)
     rd = Regex(r'duration\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(tpage)
-    thumb = None
+    thumb = 'http://i.imgur.com/75YO83o.jpg'
+    fallback = thumb
     duration = None
     if rt:
         thumb = rt.group(1)
@@ -44,9 +45,9 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb,
+        thumb=Resource.ContentsOfURLWithFallback(thumb, fallback),
         duration=duration,
-        source_title=url.split('/')[2]
+        source_title=url.split('/')[2].title()
         )
 
 ####################################################################################################
@@ -57,7 +58,9 @@ def MediaObjectsForURL(url):
             video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
-            parts=[PartObject(key=Callback(PlayVideo, url=url))]
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
             )
         ]
 
@@ -68,7 +71,7 @@ def PlayVideo(url):
     url = get_embed_url(url)
     page = HTTP.Request(url).content
     packed = get_packed_data(page)
-    if packed and no_skip():
+    if packed:
         page = Unpack(packed.group(1))
 
     r = Regex(r'file\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(page)
@@ -81,7 +84,7 @@ def PlayVideo(url):
 
 ####################################################################################################
 def get_packed_data(page):
-    return Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
+    return Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
 
 ####################################################################################################
 def get_embed_url(url, norm=False):
@@ -90,7 +93,3 @@ def get_embed_url(url, norm=False):
         return r
     else:
         return r.group(1) + 'embed-' + r.group(2) + '.html'
-
-####################################################################################################
-def no_skip():
-    return False if 'filehoot' in url else True
