@@ -67,14 +67,21 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?:\/\/(?:www\.)?thevideo\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?thevideo\.(?:[^/]+\/).+</string>
       </array>
     </dict>
     <key>VidUP</key>
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?:\/\/(?:www\.|beta\.)?vidup\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.|beta\.)?vidup\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
+    <key>VidBull</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(?:www\.)?vidbull\.(?:[^/]+\/).+</string>
       </array>
     </dict>
   </dict>

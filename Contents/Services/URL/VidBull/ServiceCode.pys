@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+"""VidBull Service Code"""
+
+from unpacker import unpack as Unpack
+import binascii
+
+import os
+import sys
+BUNDLE_PATH = os.path.join(os.getcwd().lstrip('\\\?').split('Plug-in Support')[0], 'Plug-ins', 'lmwt-kiss.bundle')
+MODULE_PATH = os.path.join(BUNDLE_PATH, 'Contents', 'Libraries', 'Shared')
+if MODULE_PATH not in sys.path:
+    sys.path.append(MODULE_PATH)
+import pyaes
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = get_embed_url(url, norm=True)
+    return r.group(1) + r.group(2)
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
+    title = None
+    thumb = None
+    duration = None
+
+    title_node = html.xpath('//h3/text()')
+    if title_node:
+        reg_name = Regex(r'Verifying Video Request.*?\-(.+)').search(title_node[0].strip())
+        if reg_name:
+            title = reg_name.group(1).strip()
+    if not title:
+        raise Ex.MediaExpired
+
+
+    page = HTTP.Request(get_embed_url(url)).content
+    packed = get_packed_data(page)
+    if packed:
+        page = Unpack(packed.group(1))
+
+    rt = Regex(r'image\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
+    rd = Regex(r'duration\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(page)
+    if rt:
+        thumb = rt.group(1)
+    if rd:
+        duration = int(rd.group(1)) * 1000
+
+    return VideoClipObject(
+        title=title,
+        thumb=thumb,
+        duration=duration,
+        source_title=url.split('/')[2]
+        )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[PartObject(key=Callback(PlayVideo, url=url))]
+            )
+        ]
+
+####################################################################################################
+@indirect
+def PlayVideo(url):
+
+    page = HTTP.Request(get_embed_url(url)).content
+    packed = get_packed_data(page)
+    if packed:
+        page = Unpack(packed.group(1))
+
+    r = Regex(r'file\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(page)
+    if r:
+        vurl = vidbull_decrypt(r.group(1))
+        if vurl:
+            Log.Debug('* PlayVideo URL = \"%s\"' %vurl)
+            return IndirectResponse(VideoClipObject, key=vurl)
+        else:
+            Log.Error('* VidBull Decryption Error')
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_packed_data(page):
+    return Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file|src).+\.split\('\|'\)\)\))").search(page)
+
+####################################################################################################
+def get_embed_url(url, norm=False):
+    r = Regex(r'(https?\:\/\/(?:www\.)?vidbull\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    if norm:
+        return r
+    else:
+        return r.group(1) + 'embed-' + r.group(2) + '.html'
+
+####################################################################################################
+def ensure_unicode(v):
+    if isinstance(v, str):
+        v = v.decode('utf8')
+    return unicode(v)
+
+####################################################################################################
+def vidbull_decrypt(f):
+    key = "YTk0OTM3NmUzN2IzNjlmMTdiYzdkM2M3YTA0YzU3MjE="
+    bkey, etb = binascii.a2b_hex(String.Base64Decode(key)), binascii.a2b_hex(f)
+    aes = pyaes.AESModeOfOperationECB(bkey)
+    if len(etb) >= 16:
+        dt = []
+        for i in xrange(len(etb)/16):
+            d = aes.decrypt(etb[i*(16):(i+1)*(16)])
+            dt.append(d)
+        r = ''.join(dt)
+        r = r.split('\x00')[0]
+        if r.startswith('http'):
+            return ensure_unicode(r)
+    return False
