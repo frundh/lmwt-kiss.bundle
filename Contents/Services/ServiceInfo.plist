@@ -84,6 +84,14 @@
         <string>^https?\:\/\/(?:www\.)?vidbull\.(?:[^/]+\/).+</string>
       </array>
     </dict>
+    <key>PromptFile</key>
+    <dict>
+      <key>URLPatterns</key>
+      <array>
+        <string>^https?\:\/\/(?:www\.)?promptfile\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(?:www\.)?briskfile\.(?:[^/]+\/).+</string>
+      </array>
+    </dict>
   </dict>
 </dict>
 </plist>
