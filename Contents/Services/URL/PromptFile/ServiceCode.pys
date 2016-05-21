@@ -2,6 +2,7 @@
 
 """(Promp, Brisk)file Service Code"""
 
+import urllib2
 HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
 
 ####################################################################################################
@@ -60,7 +61,15 @@ def PlayVideo(url):
 
     vurl = Regex(r'url\:\s?[\"\'](http[^\"\']+?)[\"\'],').search(page)
     if vurl:
-        Log.Debug('* PlayVideo ULR = %s' %vurl.group(1))
-        return IndirectResponse(VideoClipObject, key=vurl.group(1))
+        try:
+            req = urllib2.Request(vurl.group(1), headers=HEADERS)
+            req.get_method = lambda : 'HEAD'
+            resp = urllib2.urlopen(req)
+            vurl = resp.geturl()
+        except Exception as e:
+            Log.Error('* PlayVideo Error: %s' %str(e))
+            vurl = vurl.group(1)
+        Log.Debug('* PlayVideo ULR = %s' %vurl)
+        return IndirectResponse(VideoClipObject, key=vurl)
     else:
         raise Ex.MediaNotAvailable
