@@ -54,6 +54,7 @@
         <string>^https?\:\/\/(www\.)?rapidvideo\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?thevideobee\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?streamin\.(?:[^/]+\/).+</string>
+        <string>^https?\:\/\/(www\.)?vidtodo\.(?:[^/]+\/).+</string>
       </array>
     </dict>
     <key>VShare</key>
