@@ -31,7 +31,7 @@ def MetadataObjectForURL(url):
     return VideoClipObject(
         title=title[0].strip(),
         thumb=thumb,
-        source_title=url.split('/')[2].title()
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -60,3 +60,14 @@ def PlayVideo(url):
         return IndirectResponse(VideoClipObject, key=r.group(1), http_headers=HTTP_HEADERS)
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]
