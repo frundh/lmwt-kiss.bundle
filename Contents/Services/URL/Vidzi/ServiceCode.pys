@@ -10,7 +10,6 @@ def NormalizeURL(url):
     if '/embed-' in url:
         url = url.replace('/embed-', '/')
         url = url.split('-')[0]
-
     return url
 
 ####################################################################################################
@@ -33,11 +32,11 @@ def MetadataObjectForURL(url):
         raise Ex.MediaNotAvailable
 
     title = title[0].strip()
-    thumb = html.xpath('//span[@id="vplayer"]/img/@src')[0]
+    thumb = html.xpath('//span[@id="vplayer"]/img/@src')
 
     return VideoClipObject(
         title=title,
-        thumb=thumb,
+        thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
         source_title=get_source_title(url)
         )
 

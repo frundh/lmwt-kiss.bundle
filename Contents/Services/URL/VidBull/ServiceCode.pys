@@ -28,7 +28,7 @@ def MetadataObjectForURL(url):
         raise Ex.MediaNotAvailable
 
     title = None
-    thumb = None
+    thumb = 'http://i.imgur.com/75YO83o.jpg'
     duration = None
 
     title_node = html.xpath('//h3/text()')
@@ -56,7 +56,7 @@ def MetadataObjectForURL(url):
         title=title,
         thumb=thumb,
         duration=duration,
-        source_title=url.split('/')[2]
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -67,13 +67,15 @@ def MediaObjectsForURL(url):
             video_resolution='sd',
             audio_channels=2,
             optimized_for_streaming=False,
-            parts=[PartObject(key=Callback(PlayVideo, url=url))]
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
             )
         ]
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
     page = HTTP.Request(get_embed_url(url)).content
     packed = get_packed_data(page)
@@ -124,3 +126,14 @@ def vidbull_decrypt(f):
         if r.startswith('http'):
             return ensure_unicode(r)
     return False
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]

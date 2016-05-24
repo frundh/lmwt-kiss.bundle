@@ -36,7 +36,6 @@ def MetadataObjectForURL(url):
     rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(tpage)
     rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(tpage)
     thumb = 'http://i.imgur.com/75YO83o.jpg'
-    fallback = thumb
     duration = None
     if rt:
         thumb = rt.group(1)
@@ -45,7 +44,7 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=Resource.ContentsOfURLWithFallback(thumb, fallback),
+        thumb=thumb,
         duration=duration,
         source_title=get_source_title(url)
         )
@@ -66,7 +65,7 @@ def MediaObjectsForURL(url):
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
     url = get_embed_url(url)
     page = HTTP.Request(url).content

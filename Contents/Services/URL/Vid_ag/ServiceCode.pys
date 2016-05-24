@@ -33,7 +33,6 @@ def MetadataObjectForURL(url):
     rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
     rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(data)
     thumb = 'http://i.imgur.com/75YO83o.jpg'
-    fallback = thumb
     duration = None
     if rt:
         thumb = rt.group(1)
@@ -42,9 +41,9 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=Resource.ContentsOfURLWithFallback(thumb, fallback),
+        thumb=thumb,
         duration=duration,
-        source_title=url.split('/')[2].title()
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -63,7 +62,7 @@ def MediaObjectsForURL(url):
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
     page = HTTP.Request(url).content
     packed = get_packed_data(page)
@@ -82,3 +81,14 @@ def PlayVideo(url):
 ####################################################################################################
 def get_packed_data(page):
     return Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]

@@ -16,11 +16,11 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
-    thumb = html.xpath('//meta[@property="og:image"]/@content')[0]
+    thumb = html.xpath('//meta[@property="og:image"]/@content')
 
     return VideoClipObject(
         title=title[0],
-        thumb=thumb,
+        thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
         source_title='VeeHD'
     )
 
@@ -40,7 +40,7 @@ def MediaObjectsForURL(url):
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
     video_id = url.split('/video/')[-1].split('_')[0]
     page = HTTP.Request('http://veehd.com/embed?v=%s' % (video_id), cacheTime=0).content

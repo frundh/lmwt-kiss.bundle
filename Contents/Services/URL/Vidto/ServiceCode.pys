@@ -22,7 +22,6 @@ def MetadataObjectForURL(url):
         raise Ex.MediaNotAvailable
 
     thumb = 'http://i.imgur.com/75YO83o.jpg'
-    fallback = thumb
     duration = None
 
     packed = get_packed_data(HTTP.Request(get_embed_url(url)).content)
@@ -37,7 +36,7 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=Resource.ContentsOfURLWithFallback(thumb, fallback),
+        thumb=thumb,
         duration=duration,
         source_title=get_source_title(url)
         )

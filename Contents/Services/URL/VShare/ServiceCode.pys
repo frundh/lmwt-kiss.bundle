@@ -8,8 +8,7 @@ from unpacker import unpack as Unpack
 def NormalizeURL(url):
 
     if '/embed-' in url:
-        url = url.replace('/embed-', '/')
-        url = url.split('-')[0]
+        url = url.replace('/embed-', '/').split('-')[0]
 
     return url
 
@@ -25,20 +24,23 @@ def MetadataObjectForURL(url):
     if not title:
         raise Ex.MediaNotAvailable
 
-    title = title[0].replace('.mp4', '').strip()
+    title = title[0]
+    duration = None
     data = source_text(url)
     if data:
         data = Unpack(data.group(1))
-        thumb = Regex(r'image:"([^"]+\.(?:jpg|png))"').search(data)
+        thumb = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
+        rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(data)
         if thumb:
             thumb = thumb.group(1)
-        else:
-            thumb = None
+        if rd:
+            duration = int(rd.group(1)) * 1000
 
     return VideoClipObject(
         title=title,
-        thumb=thumb,
-        source_title='VShare'
+        thumb=thumb if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        duration=duration,
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -62,7 +64,7 @@ def PlayVideo(url, **kwargs):
     data = source_text(url)
     if data:
         data = Unpack(data.group(1))
-        vurl = Regex(r'file:"([^"]+\.mp4)"').search(data)
+        vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil|vtt))(?:\"|\')').search(data)
         if vurl:
             Log.Debug('* PlayVideo URL  = %s' %vurl.group(1))
             return IndirectResponse(VideoClipObject, key=vurl.group(1))
@@ -81,6 +83,6 @@ def get_embed_url(url):
 def source_text(url):
 
     page = HTTP.Request(get_embed_url(url)).content
-    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
+    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
 
     return data

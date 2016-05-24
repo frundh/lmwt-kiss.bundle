@@ -36,7 +36,7 @@ def MediaObjectsForURL(url):
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
     html = HTML.ElementFromURL(url, headers=HEADERS)
     post_values = {}

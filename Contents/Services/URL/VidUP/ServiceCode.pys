@@ -7,9 +7,8 @@ from unpacker import unpack as Unpack
 ####################################################################################################
 def NormalizeURL(url):
 
-    if 'embed-' in url:
-        r = Regex(r'(https?:\/\/(?:beta\.)?vidup\.(?:[^/]+\/)?)embed\-(.+?)(?:\-|\.)').search(url)
-        url = r.group(1) + r.group(2)
+    if '/embed-' in url:
+        url = url.replace('/embed-', '/').split('-')[0]
 
     return url
 
@@ -25,8 +24,8 @@ def MetadataObjectForURL(url):
 
     return VideoClipObject(
         title=title[0].strip(),
-        thumb=thumb[0].strip(),
-        source_title='VidUP'
+        thumb=thumb[0].strip() if thumb else 'http://i.imgur.com/75YO83o.jpg',
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -72,7 +71,7 @@ def get_embed_url(url):
 def source_dict(url):
 
     page = HTTP.Request(url).content
-    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
+    data = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
     if data:
         data = Unpack(data.group(1))
         data = data.replace('\\', '')
@@ -87,3 +86,14 @@ def source_dict(url):
     s = s.replace('\'', '\"').replace('label', '\"label\"').replace('file', '\"file\"')
 
     return JSON.ObjectFromString(s)
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]

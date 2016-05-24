@@ -23,7 +23,7 @@ def MetadataObjectForURL(url):
     if thumb:
         thumb = thumb.group(1).strip('\'\" ')
     else:
-        thumb = None
+        thumb = 'http://i.imgur.com/75YO83o.jpg'
 
     return VideoClipObject(
         title=title.group(1).strip('\'\" '),
