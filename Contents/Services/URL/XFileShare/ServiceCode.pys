@@ -47,7 +47,7 @@ def MetadataObjectForURL(url):
         title=title[0].strip(),
         thumb=Resource.ContentsOfURLWithFallback(thumb, fallback),
         duration=duration,
-        source_title=url.split('/')[2].title()
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -88,8 +88,19 @@ def get_packed_data(page):
 
 ####################################################################################################
 def get_embed_url(url, norm=False):
-    r = Regex(r'(https?\:\/\/(?:www\.)?(?:daclips|filehoot|gorillavid|movpod|powerwatch|rapidvideo|thevideobee|streamin|vidtodo|allmyvideos)\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    r = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
     if norm:
         return r
     else:
         return r.group(1) + 'embed-' + r.group(2) + '.html'
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]
