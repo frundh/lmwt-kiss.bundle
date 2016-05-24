@@ -38,7 +38,7 @@ def MetadataObjectForURL(url):
     return VideoClipObject(
         title=title,
         thumb=thumb,
-        source_title='Vidzi'
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
@@ -63,12 +63,23 @@ def PlayVideo(url, **kwargs):
     url = url.replace('vidzi://', 'http://')
 
     page = HTTP.Request(url).content
-    data = Regex("<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
-
-    if data:
-        data = Unpack(data.group(1))
-        file = Regex('file:"([^"]+\.mp4)"').search(data)
-        if file:
-            return IndirectResponse(VideoClipObject, key=file.group(1))
+    packed = Regex("<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+    if packed:
+        data = Unpack(packed.group(1))
+        vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(data)
+        if vurl:
+            Log.Debug('* PlayVideo URL = %s' %vurl.group(1))
+            return IndirectResponse(VideoClipObject, key=vurl.group(1))
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]

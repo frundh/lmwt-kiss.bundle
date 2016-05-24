@@ -2,7 +2,8 @@
 
 """Vidto service code"""
 
-import time
+from unpacker import unpack as Unpack
+
 ####################################################################################################
 def NormalizeURL(url):
 
@@ -11,50 +12,90 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-    html = HTML.ElementFromURL(url)
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
+
     title = html.xpath('//h2[@class="video-page-head"]/text()')
     if not title:
         raise Ex.MediaNotAvailable
 
+    thumb = 'http://i.imgur.com/75YO83o.jpg'
+    fallback = thumb
+    duration = None
+
+    packed = get_packed_data(HTTP.Request(get_embed_url(url)).content)
+    if packed:
+        data = Unpack(packed.group(1))
+        rt = Regex(r'(?:\"|\')?image(?:\"|\')?\:(?:\s|\\)?(?:\"|\')([^\"\']+)(?:\"|\')').search(data)
+        rd = Regex(r'(?:\"|\')?duration(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+)(?:\"|\')').search(data)
+        if rt:
+            thumb = rt.group(1).strip('\\')
+        if rd:
+            duration = int(rd.group(1)) * 1000
+
     return VideoClipObject(
         title=title[0].strip(),
-        source_title='Vidto'
+        thumb=Resource.ContentsOfURLWithFallback(thumb, fallback),
+        duration=duration,
+        source_title=get_source_title(url)
         )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-    return [
-        MediaObject(
-            video_resolution = 'sd',
-            audio_channels = 2,
-            optimized_for_streaming = False,
-            parts = [
-                PartObject(key=Callback(PlayVideo, url=url))
-            ]
-        )
-    ]
+    mo = []
+    packed = get_packed_data(HTTP.Request(get_embed_url(url)).content)
+    if packed:
+        data = Unpack(packed.group(1))
+        for f, u in reversed(get_fmt_list(data)):
+            mo.append(MediaObject(
+                video_resolution=f[:-1],
+                audio_channels=2,
+                optimized_for_streaming=False,
+                parts=[
+                    PartObject(key=Callback(PlayVideo, url=url, fmt=f))
+                    ]
+                ))
+        return mo
+
+    raise Ex.MediaNotAvailable
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, fmt, **kwargs):
 
-    html = HTML.ElementFromURL(url)
-    post_values = {}
-
-    for item in html.xpath('//form[@method="POST"]/input'):
-
-        name = item.get('name')
-        value = item.get('value')
-        post_values[name] = value
-
-    time.sleep(6)
-
-    page = HTTP.Request(url, values=post_values, method='POST').content
-
-    file = Regex(r'a id="lnk_download" href="([^"]+)"').search(page)
-
-    if file:
-        return IndirectResponse(VideoClipObject, key=file.group(1))
+    packed = get_packed_data(HTTP.Request(get_embed_url(url)).content)
+    if packed:
+        data = Unpack(packed.group(1))
+        for f, u in reversed(get_fmt_list(data)):
+            if f == fmt:
+                Log.Debug('* PlayVideo ULR = %s' %u)
+                return IndirectResponse(VideoClipObject, key=u)
 
     raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_packed_data(page):
+    return Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
+
+####################################################################################################
+def get_fmt_list(page):
+    return Regex(r'(?:\"|\')?label(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(\d+p)(?:\"|\')?\,(?:\s)?(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').findall(page)
+
+####################################################################################################
+def get_embed_url(url):
+    rurl = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    return rurl.group(1) + 'embed-' + rurl.group(2) + '.html'
+
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
+
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]
