@@ -57,6 +57,8 @@ def MediaObjectsForURL(url):
                     PartObject(key=Callback(PlayVideo, url=url, fmt=f))
                     ]
                 ))
+
+    if len(mo) > 0:
         return mo
 
     raise Ex.MediaNotAvailable
