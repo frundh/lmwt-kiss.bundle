@@ -1,68 +1,128 @@
 #!/usr/bin/env python
 
-"""WholeCloud Service Code"""
+"""
+New WholeCloud Service Code
+Added new host and simplified code
+better error handling
+Host:
+    movshare == wholecloud
+    novamov == auroravid
+    videoweed == bitvid
+    cloudtime
+    nowvideo
+"""
 
-from time import sleep
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 
 ####################################################################################################
 def NormalizeURL(url):
 
    url =  url.split('?')[0]
-   url = url.replace('movshare.net', 'wholecloud.net').replace('novamov.com', 'auroravid.to')
-
    return url
 
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-   html = HTML.ElementFromURL(url)
+    try:
+        html = HTML.ElementFromURL(url)
+    except:
+        raise Ex.MediaNotAvailable
 
-   title = html.xpath('//meta[@property="og:title"]/@content')[0].split('Watch ')[-1].split(' online ')[0]
-   thumb = html.xpath('//meta[@property="og:image"]/@content')[0]
+    source_title = get_source_title(url)
+    title = html.xpath('//meta[@property="og:title"]/@content')
+    if not title:
+        title = html.xpath('//meta[@name="title"]/@content')
+        if not title:
+            title = source_title
+        elif len(title[0]) > 0:
+            title = title[0].strip()
+        else:
+            title = source_title
+    else:
+        title = title[0].split('Watch ')[-1].split(' online ')[0].strip()
 
-   return VideoClipObject(
-      title = title,
-      thumb = thumb,
-      source_title='WholeCloud'
-   )
+    if Regex(r'(movshare|wholecloud|novamov|auroravid|videoweed|bitvid|cloudtime|nowvideo)\s-\s(.+)').search(title.lower()):
+        title = title.split(' - ')[0]
+
+    thumb = html.xpath('//meta[@property="og:image"]/@content')
+
+    # test if video url returns an error, if so then do not display link
+    data = get_video_url(url)
+    if 'error=' in data:
+        Log.Error('* MetadataObjectForURL Error: %s' %str(data))
+        if data.split('error_msg=')[1] == 'The video no longer exists':
+            raise Ex.MediaExpired
+        raise Ex.MediaNotAvailable
+
+    return VideoClipObject(
+      title=title,
+      thumb=thumb[0] if thumb else 'http://i.imgur.com/75YO83o.jpg',
+      source_title=source_title
+      )
 
 ####################################################################################################
 def MediaObjectsForURL(url):
 
-   return [
-      MediaObject(
-         video_resolution = 'sd',
-         audio_channels = 2,
-         optimized_for_streaming = False,
-         parts = [
-            PartObject(key=Callback(PlayVideo, url=url))
-         ]
-      )
-   ]
+    return [
+        MediaObject(
+            video_resolution='sd',
+            audio_channels=2,
+            optimized_for_streaming=False,
+            parts=[
+                PartObject(key=Callback(PlayVideo, url=url))
+                ]
+            )
+        ]
 
 ####################################################################################################
 @indirect
-def PlayVideo(url):
+def PlayVideo(url, **kwargs):
 
-   html = HTML.ElementFromURL(url)
-   post_values = {}
+    data = get_video_url(url)
+    if 'error=' in data:
+        Log.Error('* PlayVideo Error: %s' %str(data))
+        if data.split('error_msg=')[1] == 'The video no longer exists':
+            raise Ex.MediaExpired
+    elif 'url' in data:
+        vurl = data.split('url=')[1].split('&')[0]
+        Log.Debug('* PlayVideo URL = %s' %vurl)
+        return IndirectResponse(VideoClipObject, key=vurl)
+    else:
+        Log.Critical('* PlayVideo Error: No video source was found')
 
-   for item in html.xpath('//form[@method="post"]/input'):
+    raise Ex.MediaNotAvailable
 
-      name = item.get('name')
-      value = item.get('value')
-      post_values[name] = value
+####################################################################################################
+def get_video_url(url):
+    rurl = Regex(r'(https?\:\/\/(?:www\.)?\w+\.(?:[^/]+\/)?)(?:.*?[/])?([^\/\.]+)').search(url)
+    url = rurl.group(1) + 'embed/?v=' + rurl.group(2)
 
-   sleep(1)
+    page = HTTP.Request(url, headers=HTTP_HEADERS).content
 
-   page = HTTP.Request(url, values=post_values, method='POST').content
+    keys = ['filekey', 'file', 'domain']
+    apid = {}
+    for k in keys:
+        r = Regex(r'flashvars\.%s\=\s?(?:\'|\")?([^\"\']+)?(?:\'|\")?\;' %k).search(page)
+        if k == 'filekey':
+            fkr = Regex(r'var\s%s\=\s?(?:\'|\")?([^\"\']+)(?:\'|\")?\;' %r.group(1)).search(page)
+            if fkr:
+                value = fkr.group(1).replace('.', '%2E')
+            else:
+                value = r.group(1).replace('.', '%2E')
+        else:
+            value = r.group(1)
+        apid.update({k: value})
 
-   host = url.split('/')[2]
-   filekey = Regex('flashvars\.filekey="([^"]+)";').search(page).group(1).replace('.', '%2E')
-   file = Regex('flashvars\.file="([^"]+)";').search(page).group(1)
+    data_url = '%s/api/player.api.php?key=%s&file=%s' %(apid['domain'], apid['filekey'], apid['file'])
+    return HTTP.Request(data_url, headers=HTTP_HEADERS).content
 
-   data = HTTP.Request('http://%s/api/player.api.php?key=%s&file=%s' % (host, filekey, file)).content
-   video_url = data.split('url=')[1].split('&')[0]
-   Log.Debug('* PlayVideo URL = %s' %video_url)
+####################################################################################################
+def get_source_title(url):
+    """get source title from url"""
 
-   return IndirectResponse(VideoClipObject, key=video_url)
+    stitle = url.split('/')[2]
+    sltitle = stitle.split('.')
+    if len(sltitle) > 2:
+        return sltitle[1].title()+'.'+sltitle[2]
+    else:
+        return sltitle[0].title()+'.'+sltitle[1]
