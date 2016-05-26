@@ -4,6 +4,8 @@
 
 from unpacker import unpack as Unpack
 
+HTTP_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+
 ####################################################################################################
 def NormalizeURL(url):
 
@@ -61,14 +63,14 @@ def PlayVideo(url, **kwargs):
     # Trick to use the bundled Vidzi ULR Service
     url = url.replace('vidzi://', 'http://')
 
-    page = HTTP.Request(url).content
+    page = HTTP.Request(url, headers=HTTP_HEADERS).content
     packed = Regex(r"<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+(?:file).+\.split\('\|'\)\)\))").search(page)
     if packed:
         data = Unpack(packed.group(1))
         vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\'\?]+(?<!m3u8)(?<!smil)(?<!vtt))(?:\"|\')').search(data)
         if vurl:
             Log.Debug('* PlayVideo URL = %s' %vurl.group(1))
-            return IndirectResponse(VideoClipObject, key=vurl.group(1))
+            return IndirectResponse(VideoClipObject, key=vurl.group(1), http_headers=HTTP_HEADERS)
 
     raise Ex.MediaNotAvailable
 
