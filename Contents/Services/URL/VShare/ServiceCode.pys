@@ -64,7 +64,7 @@ def PlayVideo(url, **kwargs):
     data = source_text(url)
     if data:
         data = Unpack(data.group(1))
-        vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil|vtt))(?:\"|\')').search(data)
+        vurl = Regex(r'(?:\"|\')?file(?:\"|\')?(?:\s)?\:(?:\s)?(?:\"|\')(http[^\"\']+(?<!m3u8|smil))(?:\"|\')').search(data)
         if vurl:
             Log.Debug('* PlayVideo URL  = %s' %vurl.group(1))
             return IndirectResponse(VideoClipObject, key=vurl.group(1))
