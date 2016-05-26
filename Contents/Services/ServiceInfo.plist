@@ -50,7 +50,6 @@
     <dict>
       <key>URLPatterns</key>
       <array>
-        <string>^https?\:\/\/(www\.)?daclips\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?filehoot\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?gorillavid\.(?:[^/]+\/).+</string>
         <string>^https?\:\/\/(www\.)?movpod\.(?:[^/]+\/).+</string>
