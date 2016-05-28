@@ -471,13 +471,14 @@ def MediaVersions(url, title, thumb):
         if url.split('/')[2].replace('www.', '') in ['youtube.com']:
             continue
 
-        # Trick to use the bundled Vidzi URL Service
-        if 'vidzi.tv' in url:
-            url = url.replace('http://', 'vidzi://')
+        # Trick to use the UnSupportedServices URL Service for URLs within the trick_list
+        trick_list = ['vidzi', 'vodlocker', 'gorillavid']
+        test = ['uss/' + url for u in trick_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
+        url = test[0] if test else url
 
         if URLService.ServiceIdentifierForURL(url) is not None:
 
-            host = url.split('/')[2].replace('www.', '')
+            host = Regex(r'https?\:\/\/([^\/]+)').search(url).group(1).replace('www.', '')
 
             oc.add(DirectoryObject(
                 key = Callback(MediaPlayback, url=url, title=title),
