@@ -4,15 +4,6 @@
 <dict>
   <key>URL</key>
   <dict>
-    <key>PrimeWire</key>
-    <dict>
-      <key>URLPatterns</key>
-      <array>
-        <string>^https?\:\/\/(?:www\.)?m?primewire\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?primewire\.filespook\.(?:[^\/]+\/).+</string>
-        <string>^https?\:\/\/(?:www\.)?primeware\.(?:[^\/]+\/).+</string>
-      </array>
-    </dict>
     <key>VidBull</key>
     <dict>
       <key>URLPatterns</key>
