@@ -431,9 +431,12 @@ def MediaEpisodes(url, title, thumb):
 
     for item in html.xpath('//div[@data-id="%s"]//a[contains(@href, "/tv-")]' % (title.split(' ')[-1])):
 
-        item_title = '%s %s' % (item.xpath('.//text()')[0].strip(), item.xpath('.//text()')[1].strip().replace('â€™', "'"))
+        item_title = '%s %s' % (item.xpath('.//text()')[0].strip(), item.xpath('.//text()')[1].strip().decode('ascii', 'ignore'))
 
         if '0 links' in item_title.lower():
+            continue
+
+        if int(Regex(r'(\d+)').search(item.xpath('.//span[@class="tv_num_versions"]/text()')[0]).group(1)) == 0:
             continue
 
         item_url = item.xpath('./@href')[0]
