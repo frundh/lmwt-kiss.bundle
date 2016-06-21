@@ -510,7 +510,11 @@ def MediaPlayback(url, title):
     Log.Debug('*' * 80)
 
     oc = ObjectContainer(title2=title)
-    oc.add(URLService.MetadataObjectForURL(url))
+    try:
+        oc.add(URLService.MetadataObjectForURL(url))
+    except Exception as e:
+        Log.Error(str(e))
+        return MC.message_container('Warning', 'This media has expired.')
 
     return oc
 
