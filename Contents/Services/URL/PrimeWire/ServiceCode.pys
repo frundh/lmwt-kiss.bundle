@@ -6,7 +6,6 @@
 def MetadataObjectForURL(url):
 
     url, hurl = split_urls(url)
-    Log('%s, %s' %(url, hurl))
     source_title = Regex(r'https?\:\/\/(?:www\.|beta\.)?(\w+)').search(hurl).group(1).title().strip()
 
     try:
