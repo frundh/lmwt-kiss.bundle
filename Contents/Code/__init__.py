@@ -462,38 +462,34 @@ def MediaVersions(url, title, thumb):
     if t:
         return html
 
-    summary = html.xpath('//meta[@name="description"]/@content')[0].split(' online - ', 1)[-1].split('. Download ')[0]
-
     oc = ObjectContainer(title2=title)
 
-    for ext_url in html.xpath('//a[contains(@href, "/goto.php?") and contains(@href, "url=")]/@href'):
-
-        url = ext_url.split('url=')[-1].split('&')[0]
-        url = String.Base64Decode(url)
-
-        if url.split('/')[2].replace('www.', '') in ['youtube.com']:
+    summary = html.xpath('//meta[@name="description"]/@content')[0].split(' online - ', 1)[-1].split('. Download ')[0]
+    for ext_url in html.xpath('//a[contains(@href, "/goto.php?")]/@href'):
+        hurl = String.Base64Decode(ext_url.split('url=')[-1].split('&')[0])
+        if hurl.split('/')[2].replace('www.', '') in ['youtube.com']:
             continue
 
         # Trick to use the UnSupportedServices URL Service for URLs within the trick_list
-        trick_list = ['vidzi', 'vodlocker', 'gorillavid']
-        test = ['uss/' + url for u in trick_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(url)]
-        url = test[0] if test else url
+        trick_list = ['vidzi', 'vodlocker', 'gorillavid', 'faststream']
+        test = ['uss/' + hurl for u in trick_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(hurl)]
+        hurl = test[0] if test else hurl
 
-        if URLService.ServiceIdentifierForURL(url) is not None:
-
-            host = Regex(r'https?\:\/\/([^\/]+)').search(url).group(1).replace('www.', '')
+        if URLService.ServiceIdentifierForURL(hurl) is not None:
+            host = Regex(r'https?\:\/\/([^\/]+)').search(hurl).group(1).replace('www.', '')
+            pw_url = 'primewire:%s' %(ext_url if ext_url.startswith('//') else '/'+ext_url) + '&pw_page_url=' + url
 
             oc.add(DirectoryObject(
-                key = Callback(MediaPlayback, url=url, title=title),
-                title = '%s - %s' % (host, title),
-                summary = summary,
-                thumb = thumb
+                key=Callback(MediaPlayback, url=pw_url, title=title),
+                title='%s - %s' %(host, title),
+                summary=summary,
+                thumb=thumb
                 ))
 
-    if len(oc) < 1:
-        return MC.message_container('No Sources', 'No compatible sources found')
-    else:
+    if len(oc) != 0:
         return oc
+
+    return MC.message_container('No Sources', 'No compatible sources found')
 
 ####################################################################################################
 @route(PREFIX + '/media/playback')
