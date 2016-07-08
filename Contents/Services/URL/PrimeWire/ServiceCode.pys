@@ -92,11 +92,11 @@ def MetadataObjectForURL(url):
             show=info['show_title'],
             season=info['season_number'],
             index=info['episode_number'],
-            tags=info['genres'],
+            tags=info['genres'] if 'genres' in info.keys() else [],
             originally_available_at=originally_available_at,
-            summary=info['summary'],
+            summary=info['summary'] if 'summary' in info.keys() else None,
             duration=duration,
-            rating=info['rating'],
+            rating=info['rating'] if 'rating' in info.keys() else None,
             source_title=source_title,
             art=art
             )
@@ -104,18 +104,19 @@ def MetadataObjectForURL(url):
         return MovieObject(
             title=info['show_title'],
             thumb=Resource.ContentsOfURLWithFallback([thumb, fallback]),
-            countries=info['countries'],
-            genres=info['genres'],
+            countries=info['countries'] if 'countires' in info.keys() else [],
+            genres=info['genres'] if 'genres' in info.keys() else [],
             originally_available_at=originally_available_at,
             year=year,
-            summary=info['summary'],
+            summary=info['summary'] if 'summary' in info.keys() else None,
             duration=duration,
-            rating=info['rating'],
+            rating=info['rating'] if 'rating' in info.keys() else None,
             source_title=source_title,
             art=art
             )
 
 ####################################################################################################
+@deferred
 def MediaObjectsForURL(url):
 
     url, hurl = split_urls(url)
