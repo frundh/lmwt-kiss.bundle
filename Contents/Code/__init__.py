@@ -462,7 +462,7 @@ def MediaVersions(url, title, thumb):
     if t:
         return html
 
-    oc = ObjectContainer(title2=title)
+    oc = ObjectContainer(title2=title, no_cache=True)
 
     summary = html.xpath('//meta[@name="description"]/@content')[0].split(' online - ', 1)[-1].split('. Download ')[0]
     for ext_url in html.xpath('//a[contains(@href, "/goto.php?")]/@href'):
@@ -488,6 +488,9 @@ def MediaVersions(url, title, thumb):
 
     if len(oc) != 0:
         return oc
+    elif html.xpath('//a[starts-with(@href, "/mysettings")]'):
+        Log('* this is an adult restricted page = %s' %url)
+        return MC.message_container('Warning', 'Adult Content Blocked')
 
     return MC.message_container('No Sources', 'No compatible sources found')
 
