@@ -1,6 +1,5 @@
 import bookmarks
 import messages
-from time import sleep
 from updater import Updater
 from DumbTools import DumbKeyboard, DumbPrefs
 from AuthTools import CheckAdmin
@@ -324,9 +323,9 @@ def Media(title, rel_url, page=1, search=False):
             item_thumb = 'http://%s%s' % (url.split('/')[2], item_thumb)
 
         oc.add(DirectoryObject(
-            key = Callback(MediaSubPage, item_url=item_url, title=item_title, thumb=item_thumb, item_id=item_id),
-            title = item_title,
-            thumb = item_thumb
+            key=Callback(MediaSubPage, item_url=item_url, title=item_title, thumb=item_thumb, item_id=item_id),
+            title=item_title,
+            thumb=item_thumb
             ))
 
     next_check = html.xpath('//div[@class="pagination"]/a[last()]/@href')
@@ -338,8 +337,8 @@ def Media(title, rel_url, page=1, search=False):
         if int(next_check) > page:
 
             oc.add(NextPageObject(
-                key = Callback(Media, title=title, rel_url=rel_url, page=page+1),
-                title = 'More...'
+                key=Callback(Media, title=title, rel_url=rel_url, page=page+1),
+                title='More...'
                 ))
 
     if len(oc) > 0:
@@ -378,15 +377,15 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
 
     if category == 'TV Shows':
         oc.add(DirectoryObject(
-            key = Callback(MediaSeasons, url=url, title=title, thumb=thumb),
-            title = title,
-            thumb = thumb
+            key=Callback(MediaSeasons, url=url, title=title, thumb=thumb),
+            title=title,
+            thumb=thumb
             ))
     else:
         oc.add(DirectoryObject(
-            key = Callback(MediaVersions, url=url, title=title, thumb=thumb),
-            title = title,
-            thumb = thumb
+            key=Callback(MediaVersions, url=url, title=title, thumb=thumb),
+            title=title,
+            thumb=thumb
             ))
 
     BM.add_remove_bookmark(title, thumb, item_url, item_id, category, oc)
@@ -409,9 +408,9 @@ def MediaSeasons(url, title, thumb):
     for season in html.xpath('//div[@class="tv_container"]//a[@data-id]/@data-id'):
 
         oc.add(DirectoryObject(
-            key = Callback(MediaEpisodes, url=url, title='Season %s' % (season), thumb=thumb),
-            title = 'Season %s' % (season),
-            thumb = thumb
+            key=Callback(MediaEpisodes, url=url, title='Season %s' % (season), thumb=thumb),
+            title='Season %s' % (season),
+            thumb=thumb
             ))
 
     return oc
@@ -442,9 +441,9 @@ def MediaEpisodes(url, title, thumb):
         item_url = item.xpath('./@href')[0]
 
         oc.add(DirectoryObject(
-            key = Callback(MediaVersions, url=item_url, title=item_title, thumb=thumb),
-            title = item_title,
-            thumb = thumb
+            key=Callback(MediaVersions, url=item_url, title=item_title, thumb=thumb),
+            title=item_title,
+            thumb=thumb
             ))
 
     return oc
@@ -463,6 +462,8 @@ def MediaVersions(url, title, thumb):
         return html
 
     oc = ObjectContainer(title2=title, no_cache=True)
+    if not is_uss_installed():
+        return MC.message_container('Error', 'UnSupportedServices.bundle Required')
 
     summary = html.xpath('//meta[@name="description"]/@content')[0].split(' online - ', 1)[-1].split('. Download ')[0]
     for ext_url in html.xpath('//a[contains(@href, "/goto.php?")]/@href'):
@@ -513,7 +514,7 @@ def MediaPlayback(url, title):
         oc.add(URLService.MetadataObjectForURL(url))
     except Exception as e:
         Log.Error(str(e))
-        return MC.message_container('Warning', 'This media has expired.')
+        return MC.message_container('Warning', 'This media may have expired.')
 
     return oc
 
@@ -602,6 +603,20 @@ def update_bm_thumb(bookmark_list=list):
         Dict.Save()
 
         timer = int(Util.RandomInt(2,5) + Util.Random())
-        sleep(timer)  # sleep (0-30) seconds inbetween cover updates
+        Thread.Sleep(timer)  # sleep (0-30) seconds inbetween cover updates
 
     return
+
+####################################################################################################
+def is_uss_installed():
+    """Check install state of UnSupported Services"""
+
+    identifiers = []
+    plugins_list = XML.ElementFromURL('http://127.0.0.1:32400/:/plugins', cacheTime=0)
+
+    for plugin_el in plugins_list.xpath('//Plugin'):
+        identifiers.append(plugin_el.get('identifier'))
+
+    if 'com.plexapp.system.unsupportedservices' in identifiers:
+        return True
+    return False
