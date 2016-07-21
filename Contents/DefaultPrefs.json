@@ -5,9 +5,8 @@
     "label": "Site URL",
     "values": [
       "http://www.primewire.ag", "http://www.primewire.is", "http://www.primewire.org",
-      "http://primewire.filespook.com", "http://hdmovieas.org",
-      "http://www.mprimewire.com", "http://primeware.racing",
-      "http://www.download113.xyz"
+      "http://www.primewire.co", "http://primewire.filespook.com",
+      "http://www.mprimewire.com", "http://primeware.racing"
       ],
     "default": "http://www.primewire.ag"
   },
