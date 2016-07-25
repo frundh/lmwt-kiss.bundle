@@ -368,6 +368,7 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
     else:
         url = item_url
 
+    html = None
     if not category:
         t, html = bm_prefs_html(url)
         if t:
@@ -387,6 +388,15 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
             title=title,
             thumb=thumb
             ))
+
+        if not html:
+            t, html = bm_prefs_html(url)
+            if t:
+                return html
+
+        trailer = html.xpath('//div[@data-id="trailer"]/iframe/@src')
+        if trailer and (URLService.ServiceIdentifierForURL(trailer[0]) is not None):
+            oc.add(URLService.MetadataObjectForURL(trailer[0]))
 
     BM.add_remove_bookmark(title, thumb, item_url, item_id, category, oc)
 
