@@ -13,7 +13,7 @@ def MetadataObjectForURL(url):
     except:
         raise Ex.MediaNotAvailable
 
-    info = {}
+    info = dict()
     sslist = ['genres', 'countries', 'actors']
 
     if '/tv-' in url:
@@ -122,8 +122,8 @@ def MediaObjectsForURL(url):
     url, hurl = split_urls(url)
     try:
         return URLService.MediaObjectsForURL(hurl)
-    except Exception as e:
-        Log.Error(str(e))
+    except:
+        Log.Exception(u"Cannot find media for '{}'".format(hurl))
 
     raise Ex.MediaNotAvailable
 

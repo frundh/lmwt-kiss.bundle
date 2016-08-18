@@ -13,7 +13,7 @@ MOVIE_ICON = 'icon-movie.png'
 TV_ICON = 'icon-tv.png'
 BOOKMARK_ADD_ICON = 'icon-add-bookmark.png'
 BOOKMARK_REMOVE_ICON = 'icon-remove-bookmark.png'
-REL_URL = 'index.php?%ssort=%s&genre=%s'
+REL_URL = u'index.php?{}sort={}&genre={}'
 SORT_LIST = (
     ('date', 'Date Added'), ('views', 'Popular'), ('ratings', 'Ratings'),
     ('favorites', 'Favorites'), ('release', 'Release Date'), ('alphabet', 'Alphabet'),
@@ -36,9 +36,10 @@ def Start():
     VideoClipObject.art = R(ART)
 
     Log.Debug('*' * 80)
-    Log.Debug('* Platform.OS            = %s' %Platform.OS)
-    Log.Debug('* Platform.OSVersion     = %s' %Platform.OSVersion)
-    Log.Debug('* Platform.ServerVersion = %s' %Platform.ServerVersion)
+    Log.Debug('* Platform.OS            = {}'.format(Platform.OS))
+    Log.Debug('* Platform.OSVersion     = {}'.format(Platform.OSVersion))
+    Log.Debug('* Platform.CPU           = {}'.format(Platform.CPU))
+    Log.Debug('* Platform.ServerVersion = {}'.format(Platform.ServerVersion))
     Log.Debug('*' * 80)
 
     HTTP.CacheTime = CACHE_1HOUR
@@ -55,13 +56,12 @@ def Start():
 def MainMenu():
 
     Log.Debug('*' * 80)
-    Log.Debug('* Client.Product         = %s' %Client.Product)
-    Log.Debug('* Client.Platform        = %s' %Client.Platform)
-    Log.Debug('* Client.Version         = %s' %Client.Version)
+    Log.Debug(u'* Client.Product         = {}'.format(Client.Product))
+    Log.Debug(u'* Client.Platform        = {}'.format(Client.Platform))
+    Log.Debug(u'* Client.Version         = {}'.format(Client.Version))
 
     admin = CheckAdmin()
-
-    oc = ObjectContainer(no_cache=admin)
+    oc = ObjectContainer(title2=TITLE, no_cache=Client.Product in ['Plex Web'])
 
     if admin:
         Updater(PREFIX + '/updater', oc)
@@ -72,6 +72,7 @@ def MainMenu():
     oc.add(DirectoryObject(
         key=Callback(Section, title='TV Shows', type='tv'), title='TV Shows', thumb=R(TV_ICON)
         ))
+
     if not Prefs['no_bm']:
         oc.add(DirectoryObject(
             key=Callback(BookmarksMain), title='My Bookmarks', thumb=R('icon-bookmarks.png')
@@ -109,8 +110,8 @@ def ValidatePrefs():
     if not Prefs['no_bm']:
         try:
             test = HTTP.Request(Dict['pw_site_url'] + '/watch-2741621-Brooklyn-Nine-Nine', cacheTime=0).headers
-            Log.Debug('* \"%s\" is a valid url' %Dict['pw_site_url'])
-            Log.Debug('* \"%s\" headers = %s' %(Dict['pw_site_url'], test))
+            Log.Debug(u"* '{}' is a valid url".format(Dict['pw_site_url']))
+            Log.Debug(u"* '{}' headers = {}".format(Dict['pw_site_url'], test))
             Dict['domain_test'] = 'Pass'
         except:
             Log.Debug('* \"%s\" is not a valid domain for this channel.' %Dict['pw_site_url'])
@@ -119,10 +120,10 @@ def ValidatePrefs():
     else:
         try:
             test = HTTP.Request(Dict['pw_site_url'], cacheTime=0).headers
-            Log.Debug('* \"%s\" headers = %s' %(Dict['pw_site_url'], test))
+            Log.Debug(u"* '{}' headers = {}".format(Dict['pw_site_url'], test))
             Dict['domain_test'] = 'Pass'
         except:
-            Log.Debug('* \"%s\" is not a valid domain for this channel.' %Dict['pw_site_url'])
+            Log.Debug(u"* '{}' is not a valid domain for this channel.".format(Dict['pw_site_url']))
             Log.Debug('* Please pick a different URL')
             Dict['domain_test'] = 'Fail'
 
@@ -131,16 +132,15 @@ def ValidatePrefs():
 
 ####################################################################################################
 def DomainTest():
-    """Setup MessageContainer if Dict[\'domain_test\'] failed"""
+    """Setup MessageContainer if Dict['domain_test'] failed"""
 
     if Dict['domain_test'] == 'Fail':
         return MC.message_container('Error', error_message())
-    else:
-        return False
+    return False
 
 ####################################################################################################
 def error_message():
-    return '%s is NOT a Valid Site URL for this channel.  Please pick a different Site URL.' %Dict['pw_site_url']
+    return u'{} is NOT a Valid Site URL for this channel.  Please pick a different Site URL.'.format(Dict['pw_site_url'])
 
 ####################################################################################################
 def bm_prefs_html(url):
@@ -185,13 +185,12 @@ def BookmarksMain():
 
             oc.add(DirectoryObject(
                 key=Callback(BookmarksSub, category=key),
-                title=key, summary='Display %s Bookmarks' %key, thumb=thumb
+                title=key, summary=u'Display {} Bookmarks'.format(key), thumb=thumb
                 ))
 
     if len(oc) > 0:
         return oc
-    else:
-        return MC.message_container('Bookmarks', 'Bookmark list Empty')
+    return MC.message_container('Bookmarks', 'Bookmark list Empty')
 
 ####################################################################################################
 @route(PREFIX + '/bookmarkssub')
@@ -204,11 +203,11 @@ def BookmarksSub(category):
         return DomainTest()
     elif not category in bm.keys():
         return MC.message_container('Error',
-            '%s Bookmarks list is dirty, or no %s Bookmark list exist.' %(category, category))
+            u'{} Bookmarks list is dirty, or no {} Bookmark list exist.'.format(category, category))
 
-    oc = ObjectContainer(title2='My Bookmarks | %s' %category, no_cache=True)
+    oc = ObjectContainer(title2=u'My Bookmarks | {}'.format(category), no_cache=True)
 
-    for bookmark in sorted(bm[category], key=lambda k: k['title']):
+    for bookmark in Util.ListSortedByKey(bm[category], 'title'):
         title = bookmark['title']
         thumb = bookmark['thumb']
         url = bookmark['url']
@@ -227,8 +226,7 @@ def BookmarksSub(category):
             thumb=R('icon-refresh.png')
             ))
         return oc
-    else:
-        return MC.message_container('Bookmarks', '%s Bookmarks list Empty' %category)
+    return MC.message_container('Bookmarks', u'{} Bookmarks list Empty'.format(category))
 
 ####################################################################################################
 @route(PREFIX + '/section')
@@ -245,7 +243,7 @@ def Section(title, type='movies', genre=None):
     section = 'tv=&' if type == 'tv' else ''
     genre = genre if genre else ''
     for s, t in SORT_LIST:
-        rel_url = REL_URL %(section, s, genre)
+        rel_url = REL_URL.format(section, s, genre)
         oc.add(DirectoryObject(key=Callback(Media, title=t, rel_url=rel_url), title=t))
 
     return oc
@@ -257,14 +255,14 @@ def Genres(title, type):
         return DomainTest()
 
     section = 'tv=&' if type == 'tv' else ''
-    rel_url = 'index.php?%s' %section
+    rel_url = u'index.php?{}'.format(section)
     html, url, error = html_from_url(rel_url, 1)
     if error:
         return MC.message_container('Error', error_message())
 
     oc = ObjectContainer(title2=title)
-    g_list = []
-    for g in html.xpath('//a[contains(@href, "%sgenre=")]' %section.replace('=', '')):
+    g_list = list()
+    for g in html.xpath('//a[contains(@href, "%sgenre=")]' % section.replace('=', '')):
         genre = g.get('href').split('=')[-1]
         gtitle = g.text.strip()
         if (gtitle, genre) not in g_list:
@@ -278,7 +276,7 @@ def Genres(title, type):
 ####################################################################################################
 def html_from_url(rel_url, page=int):
     t = '' if (rel_url.endswith('&') or rel_url.endswith('?')) else '&'
-    url = Dict['pw_site_url'] + '/%s%spage=%i' %(rel_url, t, page)
+    url = Dict['pw_site_url'] + u'/{}{}page={}'.format(rel_url, t, page)
     error = False
     if not Prefs['no_bm']:
         if Dict['pw_site_url'] != Dict['pw_site_url_old']:
@@ -311,16 +309,15 @@ def Media(title, rel_url, page=1, search=False):
     oc = ObjectContainer(title2=title, no_cache=True)
 
     for item in html.xpath('//div[@class="index_container"]//a[contains(@href, "/watch-")]'):
-
         item_url = item.xpath('./@href')[0]
         item_title = item.xpath('./h2/text()')[0]
         item_thumb = item.xpath('./img/@src')[0]
         item_id = item_thumb.split('/')[-1].split('_')[0]
 
         if item_thumb.startswith('//'):
-            item_thumb = 'http:%s' % (item_thumb)
+            item_thumb = u'http:{}'.format(item_thumb)
         elif item_thumb.startswith('/'):
-            item_thumb = 'http://%s%s' % (url.split('/')[2], item_thumb)
+            item_thumb = 'http://{}{}'.format(url.split('/')[2], item_thumb)
 
         oc.add(DirectoryObject(
             key=Callback(MediaSubPage, item_url=item_url, title=item_title, thumb=item_thumb, item_id=item_id),
@@ -329,13 +326,9 @@ def Media(title, rel_url, page=1, search=False):
             ))
 
     next_check = html.xpath('//div[@class="pagination"]/a[last()]/@href')
-
     if len(next_check) > 0:
-
         next_check = next_check[0].split('page=')[-1].split('&')[0]
-
         if int(next_check) > page:
-
             oc.add(NextPageObject(
                 key=Callback(Media, title=title, rel_url=rel_url, page=page+1),
                 title='More...'
@@ -344,11 +337,8 @@ def Media(title, rel_url, page=1, search=False):
     if len(oc) > 0:
         return oc
     elif search:
-        return MC.message_container('Search',
-            'No Search results for \"%s\"' %title)
-    else:
-        return MC.message_container('Error',
-            'No media for \"%s\"' %title)
+        return MC.message_container('Search', u'No Search results for "{}"'.format(title))
+    return MC.message_container('Error', u'No media for "{}"'.format(title))
 
 ####################################################################################################
 @route(PREFIX + '/media/subpage')
@@ -373,7 +363,6 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
         t, html = bm_prefs_html(url)
         if t:
             return html
-
         category = 'TV Shows' if html.xpath('//div[@class="tv_container"]') else 'Movies'
 
     if category == 'TV Shows':
@@ -416,10 +405,9 @@ def MediaSeasons(url, title, thumb):
     oc = ObjectContainer(title2=title)
 
     for season in html.xpath('//div[@class="tv_container"]//a[@data-id]/@data-id'):
-
         oc.add(DirectoryObject(
-            key=Callback(MediaEpisodes, url=url, title='Season %s' % (season), thumb=thumb),
-            title='Season %s' % (season),
+            key=Callback(MediaEpisodes, url=url, title=u'Season {}'.format(season), thumb=thumb),
+            title=u'Season {}'.format(season),
             thumb=thumb
             ))
 
@@ -439,9 +427,7 @@ def MediaEpisodes(url, title, thumb):
     oc = ObjectContainer(title2=title)
 
     for item in html.xpath('//div[@data-id="%s"]//a[contains(@href, "/tv-")]' % (title.split(' ')[-1])):
-
-        item_title = '%s %s' % (item.xpath('.//text()')[0].strip(), item.xpath('.//text()')[1].strip().decode('ascii', 'ignore'))
-
+        item_title = '{} {}'.format(item.xpath('.//text()')[0].strip(), item.xpath('.//text()')[1].strip().decode('ascii', 'ignore'))
         if '0 links' in item_title.lower():
             continue
 
@@ -500,9 +486,8 @@ def MediaVersions(url, title, thumb):
     if len(oc) != 0:
         return oc
     elif html.xpath('//a[starts-with(@href, "/mysettings")]'):
-        Log('* this is an adult restricted page = %s' %url)
+        Log(u'* this is an adult restricted page = {}'.format(url))
         return MC.message_container('Warning', 'Adult Content Blocked')
-
     return MC.message_container('No Sources', 'No compatible sources found')
 
 ####################################################################################################
@@ -513,10 +498,10 @@ def MediaPlayback(url, title):
         return DomainTest()
 
     Log.Debug('*' * 80)
-    Log.Debug('* Client.Product         = %s' %Client.Product)
-    Log.Debug('* Client.Platform        = %s' %Client.Platform)
-    Log.Debug('* MediaPlayback Title    = %s' %title)
-    Log.Debug('* MediaPlayback URL      = %s' %url)
+    Log.Debug('* Client.Product         = {}'.format(Client.Product))
+    Log.Debug('* Client.Platform        = {}'.format(Client.Platform))
+    Log.Debug('* MediaPlayback Title    = {}'.format(title))
+    Log.Debug('* MediaPlayback URL      = {}'.format(url))
     Log.Debug('*' * 80)
 
     oc = ObjectContainer(title2=title)
@@ -525,7 +510,6 @@ def MediaPlayback(url, title):
     except Exception as e:
         Log.Error(str(e))
         return MC.message_container('Warning', 'This media may have expired.')
-
     return oc
 
 ####################################################################################################
@@ -537,10 +521,9 @@ def Search(query=''):
 
     oc = ObjectContainer(title2='Search for \"%s\"' %query)
 
-    c_list = [('Movies', 'index.php?search_keywords=%s'), ('TV Shows', 'index.php?tv=&search_keywords=%s')]
-
+    c_list = [('Movies', 'index.php?search_keywords={}'), ('TV Shows', 'index.php?tv=&search_keywords={}')]
     for c, url in c_list:
-        rel_url = url %(String.Quote(query, usePlus=True).lower())
+        rel_url = url.format(String.Quote(query, usePlus=True).lower())
         if 'TV' in c:
             thumb=R(TV_ICON)
         else:
@@ -558,22 +541,22 @@ def Search(query=''):
 def UpdateBMCovers(category):
 
     bm = Dict['Bookmarks']
-    bookmark_list = []
-    for bookmark in sorted(bm[category], key=lambda k: k['title']):
+    bookmark_list = list()
+    for bookmark in Util.ListSortedByKey(bm[category], 'title'):
         title = bookmark['title']
         thumb = bookmark['thumb']
         url = bookmark['url']
         category = bookmark['category']
         item_id = bookmark['id']
 
-        bookmark_list.append(
-            {'id': item_id, 'title': title, 'url': url, 'thumb': thumb, 'category': category}
-            )
+        bookmark_list.append({
+            'id': item_id, 'title': title, 'url': url, 'thumb': thumb, 'category': category
+            })
 
     Thread.Create(update_bm_thumb, bookmark_list=bookmark_list)
 
     return MC.message_container('Update Bookmark Covers',
-        '\"%s\" Bookmark covers will be updated' %category)
+        u'"{}" Bookmark covers will be updated'.format(category))
 
 ####################################################################################################
 def update_bm_thumb(bookmark_list=list):
@@ -590,12 +573,12 @@ def update_bm_thumb(bookmark_list=list):
 
         html = HTML.ElementFromURL(url)
         Log.Debug('*' * 80)
-        Log.Debug('* Updating \"%s\" Bookmark Cover' %nbm['title'])
+        Log.Debug(u'* Updating "{}" Bookmark Cover'.format(nbm['title']))
         thumb = html.xpath('//meta[@property="og:image"]/@content')[0]
         if not thumb.startswith('http'):
             thumb = 'http:' + thumb
 
-        Log.Debug('* thumb = %s' %thumb)
+        Log.Debug(u'* thumb = {}'.format(thumb))
         nbm.update({'thumb': thumb})
 
         # delete bm first so we can re-append it with new values
@@ -612,7 +595,7 @@ def update_bm_thumb(bookmark_list=list):
         Dict['Bookmarks'][category] = temp[category]
         Dict.Save()
 
-        timer = int(Util.RandomInt(2,5) + Util.Random())
+        timer = int(Util.RandomInt(2, 5) + Util.Random())
         Thread.Sleep(timer)  # sleep (0-30) seconds inbetween cover updates
 
     return
@@ -621,7 +604,7 @@ def update_bm_thumb(bookmark_list=list):
 def is_uss_installed():
     """Check install state of UnSupported Services"""
 
-    identifiers = []
+    identifiers = list()
     plugins_list = XML.ElementFromURL('http://127.0.0.1:32400/:/plugins', cacheTime=0)
 
     for plugin_el in plugins_list.xpath('//Plugin'):
