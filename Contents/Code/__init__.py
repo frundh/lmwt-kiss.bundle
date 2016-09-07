@@ -1,7 +1,6 @@
 import bookmarks
 import messages
 from pluginupdateservice import PluginUpdateService
-#from updater import Updater
 from DumbTools import DumbKeyboard, DumbPrefs
 from AuthTools import CheckAdmin
 
@@ -26,6 +25,9 @@ SORT_LIST = (
 BM = bookmarks.Bookmark(PREFIX, TITLE, BOOKMARK_ADD_ICON, BOOKMARK_REMOVE_ICON)
 MC = messages.NewMessageContainer(PREFIX, TITLE)
 Updater = PluginUpdateService()
+
+# Initialize first run
+Updater.initial_run
 
 ####################################################################################################
 def Start():
@@ -66,9 +68,6 @@ def MainMenu():
 
     admin = CheckAdmin()
     oc = ObjectContainer(title2=TITLE, no_cache=Client.Product in ['Plex Web'])
-
-    #if admin:
-        #Updater(PREFIX + '/updater', oc)
 
     if admin:
         if Prefs['update_channel'] == 'Stable':
