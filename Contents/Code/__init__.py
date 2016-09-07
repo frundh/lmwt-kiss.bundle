@@ -150,7 +150,6 @@ def bm_prefs_html(url, http_headers=None, cacheTime=DEFAULT_CACHE_TIME):
     else:
         http_headers = HTTP.Headers
 
-    Log(http_headers)
     if not Prefs['no_bm']:
         html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=cacheTime)
         return (False, html)
@@ -162,6 +161,26 @@ def bm_prefs_html(url, http_headers=None, cacheTime=DEFAULT_CACHE_TIME):
             HTTP.ClearCache()
             Log.Error(error_message())
             return (True, MC.message_container('Error', error_message()))
+
+####################################################################################################
+def setup_adult(url, html):
+    """Setup pass for adult content pages, if Adult Pref set"""
+
+    t = False
+    adult_content = html.xpath('//a[starts-with(@href, "/mysettings")]')
+    if Prefs['adult'] and adult_content:
+        adult_href = adult_content[0].get('href')
+        aurl = adult_href if adult_href.startswith('http') else Dict['pw_site_url'] + adult_href
+        Log(u"* Adult pass '{}' for '{}'".format(aurl, url))
+        if Regex(r'((?:tv)?.+(?:\/season\-.+\-episode\-)?)').search(url):
+            t, html = bm_prefs_html(aurl, {'Referer': url}, 0)
+        else:
+            t, html = bm_prefs_html(aurl, {'Referer': url}, CACHE_1MINUTE)
+    elif adult_content:
+        Log(u'* this is an adult restricted page = {}'.format(url))
+        t = True
+        html = MC.message_container('Warning', 'Adult Content Blocked')
+    return t, html
 
 ####################################################################################################
 @route(PREFIX + '/bookmarksmain')
@@ -369,6 +388,10 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
     if not category:
         t, html = bm_prefs_html(url)
         if t: return html
+
+        t, html = setup_adult(url, html)
+        if t: return html
+
         category = 'TV Shows' if html.xpath('//div[@class="tv_container"]') else 'Movies'
 
     if category == 'TV Shows':
@@ -406,6 +429,9 @@ def MediaSeasons(url, title, thumb):
     t, html = bm_prefs_html(url)
     if t: return html
 
+    t, html = setup_adult(url, html)
+    if t: return html
+
     oc = ObjectContainer(title2=title)
 
     for season in html.xpath('//div[@class="tv_container"]//a[@data-id]/@data-id'):
@@ -425,6 +451,9 @@ def MediaEpisodes(url, title, thumb):
         return DomainTest()
 
     t, html = bm_prefs_html(url)
+    if t: return html
+
+    t, html = setup_adult(url, html)
     if t: return html
 
     oc = ObjectContainer(title2=title)
@@ -459,17 +488,12 @@ def MediaVersions(url, title, thumb):
     t, html = bm_prefs_html(url)
     if t: return html
 
+    t, html = setup_adult(url, html)
+    if t: return html
+
     oc = ObjectContainer(title2=title, no_cache=True)
-    # setup adult content, and check for uss installation
-    adult_content = html.xpath('//a[starts-with(@href, "/mysettings")]')
     if not is_uss_installed():
         return MC.message_container('Error', 'UnSupportedServices.bundle Required')
-    elif Prefs['adult'] and adult_content:
-        t, html = bm_prefs_html(Dict['pw_site_url'] + adult_content[0].get('href'), {'Referer': url}, CACHE_1MINUTE)
-        if t: return html
-    elif adult_content:
-        Log(u'* this is an adult restricted page = {}'.format(url))
-        return MC.message_container('Warning', 'Adult Content Blocked')
 
     summary = html.xpath('//meta[@name="description"]/@content')[0].split(' online - ', 1)[-1].split('. Download ')[0]
     for ext_url in html.xpath('//a[contains(@href, "/goto.php?")]/@href'):
@@ -495,7 +519,6 @@ def MediaVersions(url, title, thumb):
 
     if len(oc) != 0:
         return oc
-
     return MC.message_container('No Sources', 'No compatible sources found')
 
 ####################################################################################################
@@ -618,6 +641,4 @@ def is_uss_installed():
     for plugin_el in plugins_list.xpath('//Plugin'):
         identifiers.append(plugin_el.get('identifier'))
 
-    if 'com.plexapp.system.unsupportedservices' in identifiers:
-        return True
-    return False
+    return bool('com.plexapp.system.unsupportedservices' in identifiers)
