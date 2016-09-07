@@ -1,20 +1,22 @@
 import bookmarks
 import messages
-from updater import Updater
+from pluginupdateservice import PluginUpdateService
+#from updater import Updater
 from DumbTools import DumbKeyboard, DumbPrefs
 from AuthTools import CheckAdmin
 
-TITLE = 'PrimeWire'
-PREFIX = '/video/lmwtkiss'
+TITLE                       = 'PrimeWire'
+PREFIX                      = '/video/lmwtkiss'
+GIT_REPO                    = 'Twoure/lmwt-kiss.bundle'
+DEFAULT_CACHE_TIME          = CACHE_1HOUR
 
-ICON = 'icon-default.png'
-ART = 'art-default.jpg'
-MOVIE_ICON = 'icon-movie.png'
-TV_ICON = 'icon-tv.png'
-BOOKMARK_ADD_ICON = 'icon-add-bookmark.png'
-BOOKMARK_REMOVE_ICON = 'icon-remove-bookmark.png'
-REL_URL = u'index.php?{}sort={}&genre={}'
-DEFAULT_CACHE_TIME = CACHE_1HOUR
+ICON                        = 'icon-default.png'
+ART                         = 'art-default.jpg'
+MOVIE_ICON                  = 'icon-movie.png'
+TV_ICON                     = 'icon-tv.png'
+BOOKMARK_ADD_ICON           = 'icon-add-bookmark.png'
+BOOKMARK_REMOVE_ICON        = 'icon-remove-bookmark.png'
+REL_URL                     = u'index.php?{}sort={}&genre={}'
 SORT_LIST = (
     ('date', 'Date Added'), ('views', 'Popular'), ('ratings', 'Ratings'),
     ('favorites', 'Favorites'), ('release', 'Release Date'), ('alphabet', 'Alphabet'),
@@ -23,6 +25,7 @@ SORT_LIST = (
 
 BM = bookmarks.Bookmark(PREFIX, TITLE, BOOKMARK_ADD_ICON, BOOKMARK_REMOVE_ICON)
 MC = messages.NewMessageContainer(PREFIX, TITLE)
+Updater = PluginUpdateService()
 
 ####################################################################################################
 def Start():
@@ -64,8 +67,16 @@ def MainMenu():
     admin = CheckAdmin()
     oc = ObjectContainer(title2=TITLE, no_cache=Client.Product in ['Plex Web'])
 
+    #if admin:
+        #Updater(PREFIX + '/updater', oc)
+
     if admin:
-        Updater(PREFIX + '/updater', oc)
+        if Prefs['update_channel'] == 'Stable':
+            # Setup Updater to track latest release
+            Updater.gui_update(PREFIX + '/updater', oc, GIT_REPO, tag='latest')
+        else:
+            # Setup Updater to track branch commits
+            Updater.gui_update(PREFIX + '/updater', oc, GIT_REPO, branch='dev')
 
     oc.add(DirectoryObject(
         key=Callback(Section, title='Movies', type='movies'), title='Movies', thumb=R(MOVIE_ICON)

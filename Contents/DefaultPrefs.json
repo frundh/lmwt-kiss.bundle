@@ -35,6 +35,13 @@
     "default": "Flase"
   },
   {
+    "id": "update_channel",
+    "label": "Update Channel",
+    "type": "enum",
+    "values": ["Stable", "Development"],
+    "default": "Stable"
+  },
+  {
     "id": "plextv",
     "label": "Auth Admin through Plex.tv",
     "type": "bool",
