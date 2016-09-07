@@ -29,6 +29,12 @@
     "default": "Flase"
   },
   {
+    "id": "adult",
+    "type": "bool",
+    "label": "Allow Adult Content",
+    "default": "Flase"
+  },
+  {
     "id": "plextv",
     "label": "Auth Admin through Plex.tv",
     "type": "bool",

@@ -14,6 +14,7 @@ TV_ICON = 'icon-tv.png'
 BOOKMARK_ADD_ICON = 'icon-add-bookmark.png'
 BOOKMARK_REMOVE_ICON = 'icon-remove-bookmark.png'
 REL_URL = u'index.php?{}sort={}&genre={}'
+DEFAULT_CACHE_TIME = CACHE_1HOUR
 SORT_LIST = (
     ('date', 'Date Added'), ('views', 'Popular'), ('ratings', 'Ratings'),
     ('favorites', 'Favorites'), ('release', 'Release Date'), ('alphabet', 'Alphabet'),
@@ -42,7 +43,7 @@ def Start():
     Log.Debug('* Platform.ServerVersion = {}'.format(Platform.ServerVersion))
     Log.Debug('*' * 80)
 
-    HTTP.CacheTime = CACHE_1HOUR
+    HTTP.CacheTime = DEFAULT_CACHE_TIME
     HTTP.Headers['User-Agent'] = (
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) '
         'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -143,13 +144,19 @@ def error_message():
     return u'{} is NOT a Valid Site URL for this channel.  Please pick a different Site URL.'.format(Dict['pw_site_url'])
 
 ####################################################################################################
-def bm_prefs_html(url):
+def bm_prefs_html(url, http_headers=None, cacheTime=DEFAULT_CACHE_TIME):
+    if http_headers:
+        http_headers.update({'User-Agent': HTTP.Headers['User-Agent']})
+    else:
+        http_headers = HTTP.Headers
+
+    Log(http_headers)
     if not Prefs['no_bm']:
-        html = HTML.ElementFromURL(url)
+        html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=cacheTime)
         return (False, html)
     else:
         try:
-            html = HTML.ElementFromURL(url)
+            html = HTML.ElementFromURL(url, headers=http_headers, cacheTime=cacheTime)
             return (False, html)
         except:
             HTTP.ClearCache()
@@ -361,8 +368,7 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
     html = None
     if not category:
         t, html = bm_prefs_html(url)
-        if t:
-            return html
+        if t: return html
         category = 'TV Shows' if html.xpath('//div[@class="tv_container"]') else 'Movies'
 
     if category == 'TV Shows':
@@ -380,8 +386,7 @@ def MediaSubPage(title, thumb, item_url, item_id, category=None):
 
         if not html:
             t, html = bm_prefs_html(url)
-            if t:
-                return html
+            if t: return html
 
         trailer = html.xpath('//div[@data-id="trailer"]/iframe/@src')
         if trailer and (URLService.ServiceIdentifierForURL(trailer[0]) is not None):
@@ -399,8 +404,7 @@ def MediaSeasons(url, title, thumb):
         return DomainTest()
 
     t, html = bm_prefs_html(url)
-    if t:
-        return html
+    if t: return html
 
     oc = ObjectContainer(title2=title)
 
@@ -421,8 +425,7 @@ def MediaEpisodes(url, title, thumb):
         return DomainTest()
 
     t, html = bm_prefs_html(url)
-    if t:
-        return html
+    if t: return html
 
     oc = ObjectContainer(title2=title)
 
@@ -454,12 +457,19 @@ def MediaVersions(url, title, thumb):
         url = Dict['pw_site_url'] + url
 
     t, html = bm_prefs_html(url)
-    if t:
-        return html
+    if t: return html
 
     oc = ObjectContainer(title2=title, no_cache=True)
+    # setup adult content, and check for uss installation
+    adult_content = html.xpath('//a[starts-with(@href, "/mysettings")]')
     if not is_uss_installed():
         return MC.message_container('Error', 'UnSupportedServices.bundle Required')
+    elif Prefs['adult'] and adult_content:
+        t, html = bm_prefs_html(Dict['pw_site_url'] + adult_content[0].get('href'), {'Referer': url}, CACHE_1MINUTE)
+        if t: return html
+    elif adult_content:
+        Log(u'* this is an adult restricted page = {}'.format(url))
+        return MC.message_container('Warning', 'Adult Content Blocked')
 
     summary = html.xpath('//meta[@name="description"]/@content')[0].split(' online - ', 1)[-1].split('. Download ')[0]
     for ext_url in html.xpath('//a[contains(@href, "/goto.php?")]/@href'):
@@ -485,9 +495,7 @@ def MediaVersions(url, title, thumb):
 
     if len(oc) != 0:
         return oc
-    elif html.xpath('//a[starts-with(@href, "/mysettings")]'):
-        Log(u'* this is an adult restricted page = {}'.format(url))
-        return MC.message_container('Warning', 'Adult Content Blocked')
+
     return MC.message_container('No Sources', 'No compatible sources found')
 
 ####################################################################################################
