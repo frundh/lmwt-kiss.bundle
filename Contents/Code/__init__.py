@@ -345,8 +345,8 @@ def Media(title, rel_url, page=1, search=False):
     oc = ObjectContainer(title2=title, no_cache=True)
 
     for item in html.xpath('//div[@class="index_container"]//a[contains(@href, "/watch-")]'):
-        item_url = item.xpath('./@href')[0]
-        item_title = item.xpath('./h2/text()')[0]
+        item_url = item.get('href')
+        item_title = Regex(r'^Watch +?').sub('', item.get('title'))
         item_thumb = item.xpath('./img/@src')[0]
         item_id = item_thumb.split('/')[-1].split('_')[0]
 
