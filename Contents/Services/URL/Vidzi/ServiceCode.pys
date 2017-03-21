@@ -10,6 +10,9 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
+	# Trick to use the bundled Vidzi URL Service
+	url = url.replace('vidzi://', 'http://')
+
 	try:
 		html = HTML.ElementFromURL(url)
 	except:
@@ -33,7 +36,6 @@ def MetadataObjectForURL(url):
 
 ####################################################################################################
 def MediaObjectsForURL(url):
-
 	return [
 		MediaObject(
 			video_resolution = 'sd',
@@ -49,16 +51,19 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, **kwargs):
 
+	# Trick to use the bundled Vidzi URL Service
+	url = url.replace('vidzi://', 'http://').replace('.html', '')
+	
 	page = HTTP.Request(url).content
 	data = Regex("<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
-
+	
 	if data:
 
 		data = unpack(data.group(1))
-		file = Regex('file:"([^"]+\.mp4)"').search(data)
-
+		file = Regex('file:"([^"]+\.mp4)"').search(data).group(1)
+		Log.Debug('Play file: ' + file)
 		if file:
-			return IndirectResponse(VideoClipObject, key=file.group(1))
+			return IndirectResponse(VideoClipObject, key=file)
 
 	raise Ex.MediaNotAvailable
 
