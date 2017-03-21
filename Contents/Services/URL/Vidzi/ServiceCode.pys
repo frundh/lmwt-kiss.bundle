@@ -10,9 +10,6 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-	# Trick to use the bundled Vidzi URL Service
-	url = url.replace('vidzi://', 'http://')
-
 	try:
 		html = HTML.ElementFromURL(url)
 	except:
@@ -51,9 +48,6 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 @indirect
 def PlayVideo(url, **kwargs):
-
-	# Trick to use the bundled Vidzi URL Service
-	url = url.replace('vidzi://', 'http://')
 
 	page = HTTP.Request(url).content
 	data = Regex("<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
