@@ -65,7 +65,7 @@
 		<dict>
 			<key>URLPatterns</key>
 			<array>
-				<string>^vidzi:\/\/(www\.)?vidzi\.tv\/.+</string>
+				<string>^http:\/\/(www\.)?vidzi\.tv\/.+</string>
 			</array>
 		</dict>
 	</dict>
