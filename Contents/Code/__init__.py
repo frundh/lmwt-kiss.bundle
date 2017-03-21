@@ -399,10 +399,6 @@ def MediaVersions(url, title, thumb):
 		if hurl.split('/')[2].replace('www.', '') in ['youtube.com']:
 			continue
 
-		# Trick to use the bundled Vidzi URL Service
-		if 'vidzi.tv' in url:
-			hurl = hurl.replace('http://', 'vidzi://')
-
 		if URLService.ServiceIdentifierForURL(hurl) is not None:
 			host = Regex(r'https?\:\/\/([^\/]+)').search(hurl).group(1).replace('www.', '')
 
