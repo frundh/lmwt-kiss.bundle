@@ -8,13 +8,10 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
-	try:
-		html = HTML.ElementFromURL(url)
-	except:
-		raise Ex.MediaNotAvailable
+	page = HTTP.Request(url, cacheTime=30).content
 
-	title = html.xpath('//title/text()')[0].split('Watch ')[-1].strip()
-	thumb = html.xpath('//span[@id="vplayer"]/img/@src')[0]
+	title = Regex(r"<title>Watch (.*?)<\/title>").search(page).group(1)
+	thumb = Regex(r"background-image:url\('(http.*?)'").search(page).group(1)
 
 	return VideoClipObject(
 		title = title,
@@ -40,15 +37,11 @@ def MediaObjectsForURL(url):
 def PlayVideo(url, **kwargs):
 
 	page = HTTP.Request(url).content
-	data = Regex("<script type=.text\/javascript.>(eval\(function\(p,a,c,k,e,.+\.split\('\|'\)\)\))").search(page)
 
-	if data:
-
-		data = unpack(data.group(1))
-		file = Regex('file:"([^"]+\.mp4)"').search(data)
-
-		if file:
-			return IndirectResponse(VideoClipObject, key=file.group(1))
+	file = Regex(r'<source src=\"(http.*?mp4)\"').findall(page)[0]
+	Log.Debug('Play file: ' + file)
+	if file:
+		return IndirectResponse(VideoClipObject, key=file)
 
 	raise Ex.MediaNotAvailable
 
