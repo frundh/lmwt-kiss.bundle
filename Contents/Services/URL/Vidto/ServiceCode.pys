@@ -1,23 +1,22 @@
 # Vidto
-#
+
+import time
+
 ####################################################################################################
 def NormalizeURL(url):
 
-	if not '/embed-' in url:
-		return 'http://vidto.me/embed-%s.html' % (url.split('vidto.me/')[-1].split('.html')[0])
-	else:
-		return url
-
+	return url.replace('embed-', '').replace('.html', '')
+	
 ####################################################################################################
 def MetadataObjectForURL(url):
 
 	page = HTTP.Request(url, cacheTime=30).content
 
-	thumb_url = Regex('image: "(http:\/\/.*\.jpg)"').search(page).group(1)
-
+	title = Regex(r'<META NAME=\"description\" CONTENT=\"(.*)\">').search(page).group(1).replace('Watch video ', '')
+	
 	return VideoClipObject(
-		title = 'Video',
-		thumb = thumb_url
+		title = title,
+		#thumb = thumb_url
 	)
 
 ####################################################################################################
@@ -37,8 +36,21 @@ def MediaObjectsForURL(url):
 ####################################################################################################
 @indirect
 def PlayVideo(url):
-
+	
 	page = HTTP.Request(url, cacheTime=30).content
+	
+	wait = Regex('<span id=\"countdown_str\">Wait <span id=\"cxc\">(\d*)</span>').search(page).group(1)
+	time.sleep(int(wait) + 1)
+	
+	post_values = {}
+	
+	for item in Regex(r'<input type=\"hidden\" name=\"(.*?)\" value=\"(.*?)\"').finditer(page):
+		name = item.group(1)
+		value = item.group(2)
+		post_values[name] = value
+			
+
+	page = HTTP.Request(url, values=post_values, method='POST').content
 
 	video_url = Regex('\[{file:"(http:\/\/.*?\.mp4)"').search(page).group(1)
 	Log.Debug('Play file: ' + video_url)
