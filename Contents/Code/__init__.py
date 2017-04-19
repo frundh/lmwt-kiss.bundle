@@ -512,9 +512,9 @@ def MediaVersions(url, title, thumb):
             continue
 
         # Trick to use the UnSupportedServices URL Service for URLs within the trick_list
-        trick_list = ['vidzi', 'vodlocker', 'gorillavid', 'faststream']
-        test = ['uss/' + hurl for u in trick_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(hurl)]
-        hurl = test[0] if test else hurl
+        #trick_list = ['vidzi', 'vodlocker', 'gorillavid', 'faststream']
+        #test = ['uss/' + hurl for u in trick_list if Regex(r'(?:\.|\/)(%s)\.' %u).search(hurl)]
+        #hurl = test[0] if test else hurl
 
         if URLService.ServiceIdentifierForURL(hurl) is not None:
             host = Regex(r'https?\:\/\/([^\/]+)').search(hurl).group(1).replace('www.', '')
